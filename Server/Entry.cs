@@ -8,21 +8,31 @@ namespace Server
 {
     internal class Entry
     {
-        public static DBConnection dbCon;
+        //public static DBConnection dbCon;
         private static bool isRunning;
         static void Main(string[] args)
         {
-            dbCon = DBConnection.Instance();
-            dbCon.Server = "127.0.0.1";
-            dbCon.DatabaseName = "gamedata";
-            dbCon.UserName = "admin";
-            dbCon.Password = "D-fR-wPdkeggJ21t";
+            //dbCon = DBConnection.Instance();
+            //dbCon.Server = "127.0.0.1";
+            //dbCon.DatabaseName = "gamedata";
+            //dbCon.UserName = "admin";
+            //dbCon.Password = "D-fR-wPdkeggJ21t";
 
             Console.Title = "Game Server";
             isRunning = true;
 
             
+            
+            try
+            {
+                MySQLConnections.Initialiser();
 
+            }
+            catch (Exception e)
+            {
+
+                Console.Write("Sql Initialisation failed: " +e.Message);
+            }
             Server.Start(26950, 50);
 
             Console.Read();
@@ -30,7 +40,7 @@ namespace Server
             {
                 
                 Packet packet = new Packet(0);
-                packet.AddString("hello", 10);
+                packet.AddString(DateTime.Now.ToString(), 15);
                 packet.AddInt32(15311);
                 Server.clientList[0].ServerSend(packet);
             }

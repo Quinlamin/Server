@@ -12,13 +12,14 @@ namespace Server
 {
     internal class Client
     {
+        public float timeout = 10000;
         public Socket client;
         public Thread thisThread;
         public int pID;
         public AccountDetails accountDetails;
         bool ownsClient;
         bool waitingAck = false;
-
+        bool running = true;
         public Client(Socket _client, bool _ownsClient)
         {
             client = _client;
@@ -29,23 +30,48 @@ namespace Server
         {
             byte[] data = packet.data;
             Console.WriteLine("sending data to client");
-            _ = await client.SendAsync(new ArraySegment<byte>(data), SocketFlags.None);
-            Console.WriteLine("Sent Data");
-            waitingAck = true;
-            var buffer = new byte[1024];
-            var received = await client.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
-            waitingAck = false;
-            Console.WriteLine("received");
-            var ackPacket = new Packet(buffer);
+            try
+            {
+                _ = await client.SendAsync(new ArraySegment<byte>(data), SocketFlags.None);
+                Console.WriteLine("Sent Data");
+                waitingAck = true;
+                var buffer = new byte[1024];
+                var delayTask = Task.Delay(TimeSpan.FromMilliseconds(timeout));
+
+                try
+                {
+                    var received = await client.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+
+                    waitingAck = false;
+                    Console.WriteLine("received");
+                    var ackPacket = new Packet(buffer);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine($"Client {pID} has timed out. Disconnecting...");
+                    Server.clientList[pID] = null;
+                    running = false;
+                }
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"Client {pID} has timed out. Disconnecting...");
+                Server.clientList[pID] = null;
+                running = false;
+            }
+            
             
         }
+
+
+    
         bool DelegatableSend(Packet packet)
         {
             return Server.delegatesSend[packet.packetID];
         }
         bool DelegatableRecieve(Packet packet)
         {
-            return Server.delegatesReceive[packet.packetID]
+            return Server.delegatesReceive[packet.packetID];
         }
         async void DelegateRecieve(Packet packet)
         {
@@ -57,7 +83,7 @@ namespace Server
         }
         public async Task ListenToClient()
         {
-            while (true)
+            while (running)
             {
                 while (!waitingAck)
                 {

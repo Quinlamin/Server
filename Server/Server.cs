@@ -6,13 +6,14 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
+using MySql.Data.MySqlClient;
 namespace Server
 {
     static class Server
     {
         public static Dictionary<int, bool> delegatesReceive;
         public static Dictionary<int, bool> delegatesSend;
+        public static MySqlConnection connection;
         static int port;
         static int maxPlayers;
 
@@ -38,7 +39,7 @@ namespace Server
         
         static async Task MainAsync()
         {
-            Console.WriteLine("Starting...");
+            Console.WriteLine("Starting network server...");
             
             Socket listener = new Socket(IPAddress.Parse("127.0.0.1").AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             IPEndPoint iPEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 26950);
